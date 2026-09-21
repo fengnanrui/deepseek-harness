@@ -141,6 +141,21 @@ describe('web e2e: Models settings page configures a dormant provider', () => {
       scaffold.workspaceCwd,
     )
     await compareOrRefreshGolden(NATIVE_DELETE_EXPECTED, snapshot, MODE)
+    try {
+      // A landscape handset with its keyboard open leaves little vertical
+      // space. The shared modal must scroll its body, not lose its actions.
+      await page.setViewportSize({ width: 320, height: 200 })
+      const fits = () => deleteDialog.evaluate((element) => {
+        const rect = element.getBoundingClientRect()
+        return rect.top >= 0 && rect.left >= 0 && rect.bottom <= window.innerHeight
+          && rect.right <= window.innerWidth
+      })
+      await expect.poll(fits).toBe(true)
+      const cancel = deleteDialog.getByRole('button', { name: '取消', exact: true })
+      expect(await cancel.evaluate(element => element.getBoundingClientRect().bottom <= window.innerHeight)).toBe(true)
+    } finally {
+      await page.setViewportSize({ width: 1680, height: 1000 })
+    }
     await deleteDialog.getByRole('button', { name: '取消', exact: true }).click()
   }, 60_000)
 

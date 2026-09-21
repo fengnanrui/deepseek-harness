@@ -20,12 +20,15 @@
 
 /* Dialog card: r24, elevation-prominent, layer-2 fill, pb 24. */
 .dialog {
+  --dsh-scrollbar-thumb: var(--dsw-alias-scrollbar-bg-l2);
+  --dsh-scrollbar-thumb-hover: var(--dsw-alias-scrollbar-hover-l2);
   position: relative;
   z-index: 1;
   display: flex;
   flex-direction: column;
   gap: 20px;
   width: min(380px, 100%);
+  max-height: calc(100dvh - 48px);
   padding: 0 0 24px;
   overflow: hidden;
   border: 0;
@@ -38,6 +41,9 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* Header row (figma Title row): pad l24/t22/r14/b12, SPACE_BETWEEN —
@@ -96,6 +102,8 @@
 
 .footer {
   display: flex;
+  flex: none;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
   gap: 8px;

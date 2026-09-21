@@ -11,12 +11,13 @@
  */
 import { useRef } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, render } from '@testing-library/react'
+import { act, cleanup, render } from '@testing-library/react'
 import { useAnchoredPosition } from '../src/useAnchoredPosition.ts'
 
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
 })
 
 /** One recorded `ResizeObserver` instance, so a test can drive its callback. */
@@ -64,6 +65,26 @@ function Host({ open }: { open: boolean }) {
 }
 
 describe('useAnchoredPosition', () => {
+  it('keeps an oversized panel leading edge visible and follows the keyboard viewport', () => {
+    const viewport = new EventTarget()
+    Object.assign(viewport, { width: 320, height: 240, offsetLeft: 0, offsetTop: 0 })
+    vi.stubGlobal('visualViewport', viewport)
+    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(500)
+    vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(500)
+    const remove = vi.spyOn(viewport, 'removeEventListener')
+    const ui = render(<Host open />)
+    expect(ui.getByTestId('panel').style.left).toBe('12px')
+    expect(ui.getByTestId('panel').style.top).toBe('12px')
+    act(() => {
+      Object.assign(viewport, { offsetLeft: 20, offsetTop: 80 })
+      viewport.dispatchEvent(new Event('resize'))
+    })
+    expect(ui.getByTestId('panel').style.left).toBe('32px')
+    expect(ui.getByTestId('panel').style.top).toBe('92px')
+    ui.unmount()
+    expect(remove.mock.calls.map(([type]) => type)).toEqual(['resize', 'scroll'])
+  })
+
   it('observes the panel while open and disconnects when it closes', () => {
     const made = stubResizeObserver()
     const ui = render(<Host open />)

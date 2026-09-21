@@ -52,8 +52,13 @@ export function useAnchoredPosition(options: AnchoredPositionOptions): CSSProper
       const height = panel?.offsetHeight ?? 0
       let left = rect.left
       let top = side === 'top' ? rect.top - gap - height : rect.bottom + gap
-      if (width > 0) left = Math.min(Math.max(left, margin), window.innerWidth - width - margin)
-      if (height > 0) top = Math.min(Math.max(top, margin), window.innerHeight - height - margin)
+      const viewport = window.visualViewport
+      const minLeft = (viewport?.offsetLeft ?? 0) + margin
+      const minTop = (viewport?.offsetTop ?? 0) + margin
+      const maxLeft = minLeft + (viewport?.width ?? window.innerWidth) - width - margin * 2
+      const maxTop = minTop + (viewport?.height ?? window.innerHeight) - height - margin * 2
+      if (width > 0) left = Math.max(minLeft, Math.min(left, maxLeft))
+      if (height > 0) top = Math.max(minTop, Math.min(top, maxTop))
       /* v8 ignore stop */
       setPosition({ left, top })
     }
@@ -62,6 +67,9 @@ export function useAnchoredPosition(options: AnchoredPositionOptions): CSSProper
     place()
     window.addEventListener('scroll', place, true)
     window.addEventListener('resize', place)
+    const viewport = window.visualViewport
+    viewport?.addEventListener('resize', place)
+    viewport?.addEventListener('scroll', place)
     // The panel's own height changes without either event — a status line
     // appearing inside it, or a `resize: vertical` textarea dragged taller —
     // and a stale clamp would let a panel near the bottom edge cross the
@@ -77,6 +85,8 @@ export function useAnchoredPosition(options: AnchoredPositionOptions): CSSProper
       observer?.disconnect()
       window.removeEventListener('scroll', place, true)
       window.removeEventListener('resize', place)
+      viewport?.removeEventListener('resize', place)
+      viewport?.removeEventListener('scroll', place)
     }
   }, [open, anchorRef, panelRef, side, gap, margin])
   return position
